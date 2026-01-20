@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from services.movie_session import get_movie_session_by_id
 
-from db.models import Order, Ticket
+from db.models import Order, Ticket, MovieSession
 
 
 @transaction.atomic
@@ -20,14 +20,20 @@ def create_order(
         new_order.created_at = date
         new_order.save(update_fields=["created_at"])
 
-    for ticket in tickets:
-        session = get_movie_session_by_id(ticket["movie_session"])
-        Ticket.objects.create(
+    session_ids = {ticket["movie_session"] for ticket in tickets}
+    sessions = MovieSession.objects.in_bulk(session_ids)
+
+    tickets_to_create = [
+        Ticket(
             order=new_order,
-            movie_session=session,
+            movie_session=sessions[ticket["movie_session"]],
             row=ticket["row"],
             seat=ticket["seat"]
         )
+        for ticket in tickets
+    ]
+
+    Ticket.objects.bulk_create(tickets_to_create)
 
 
 def get_orders(username: str = None) -> QuerySet[Order]:
