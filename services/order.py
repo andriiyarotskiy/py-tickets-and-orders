@@ -21,12 +21,12 @@ def create_order(
         new_order.save(update_fields=["created_at"])
 
     for ticket in tickets:
-        session = get_movie_session_by_id(ticket['movie_session'])
+        session = get_movie_session_by_id(ticket["movie_session"])
         Ticket.objects.create(
             order=new_order,
             movie_session=session,
-            row=ticket['row'],
-            seat=ticket['seat']
+            row=ticket["row"],
+            seat=ticket["seat"]
         )
 
 
